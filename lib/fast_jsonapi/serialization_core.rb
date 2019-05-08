@@ -44,6 +44,8 @@ module FastJsonapi
       def attributes_hash(record, fieldset = nil, params = {})
         attributes = attributes_to_serialize
         attributes = attributes.slice(*fieldset) if fieldset.present?
+        attributes = {} if fieldset == []
+
         attributes.each_with_object({}) do |(_k, attribute), hash|
           attribute.serialize(record, params, hash)
         end
@@ -52,6 +54,7 @@ module FastJsonapi
       def relationships_hash(record, relationships = nil, fieldset = nil, params = {})
         relationships = relationships_to_serialize if relationships.nil?
         relationships = relationships.slice(*fieldset) if fieldset.present?
+        relationships = {} if fieldset == []
 
         relationships.each_with_object({}) do |(_k, relationship), hash|
           relationship.serialize(record, params, hash)
@@ -116,6 +119,8 @@ module FastJsonapi
 
         includes_list.sort.each_with_object([]) do |include_item, included_records|
           items = parse_include_item(include_item)
+          remaining_items = remaining_items(items)
+
           items.each do |item|
             next unless relationships_to_serialize && relationships_to_serialize[item]
             relationship_item = relationships_to_serialize[item]
@@ -136,8 +141,8 @@ module FastJsonapi
                 serializer = self.compute_serializer_name(inc_obj.class.name.demodulize.to_sym).to_s.constantize
               end
 
-              if remaining_items(items)
-                serializer_records = serializer.get_included_records(inc_obj, remaining_items(items), known_included_objects, fieldsets, params)
+              if remaining_items.present?
+                serializer_records = serializer.get_included_records(inc_obj, remaining_items, known_included_objects, fieldsets, params)
                 included_records.concat(serializer_records) unless serializer_records.empty?
               end
 
