@@ -68,7 +68,7 @@ module FastJsonapi
 
       return unless associated_object = fetch_associated_object(record, params)
 
-      if relationship_type == :belongs_to
+      if %i[belongs_to has_one].include?(relationship_type)
         return {
           id: fetch_id(record, params),
           type: run_key_transform(associated_object.class.name.demodulize.underscore)
